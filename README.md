@@ -8,7 +8,7 @@ Questo applicativo contiente, sotto licenza MIT, codice di Ion Cristian Buse (ht
 
 ```
 DPIsp/
-		├── LICENSE_GPL.txt
+		├── LICENSE
 		├── LICENSE_MIT.txt
 		├── README.md
 		└── DPIsp/
