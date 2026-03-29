@@ -1,7 +1,7 @@
 ## DPIsp
 
-Simple MS-Excel based archive with macro-enabled capabilities to manage data and generate PDF report. Optimized for DPI periodical inspections and customized for CNSAS-Italy.
-Questo applicativo contiente, sotto licenza MIT, codice di Ion Cristian Buse (https://github.com/cristianbuse/VBA-UserForm-MouseScroll)
+Simple MS-Excel based archive with macro-enabled capabilities to manage data and generate PDF report. Optimized for DPI periodical inspections and customized for CNSAS-Italy. Italian language only.
+It contains, under MIT license, code from Ion Cristian Buse (https://github.com/cristianbuse/VBA-UserForm-MouseScroll)
 
 
 ## Struttura di questo file
