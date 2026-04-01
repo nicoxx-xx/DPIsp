@@ -11,6 +11,7 @@ DPIsp/
 	├── LICENSE
 	├── LICENSE_MIT.txt
 	├── README.md
+	├── .gitattributes
 	├── src
 	└── DPIsp/
 		├── /pdf
