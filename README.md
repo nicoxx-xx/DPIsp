@@ -4,7 +4,7 @@ Simple MS-Excel based archive with macro-enabled capabilities to manage data and
 It contains, under MIT license, code from Ion Cristian Buse (https://github.com/cristianbuse/VBA-UserForm-MouseScroll)
 
 
-## Struttura di questo file
+## Repository structure
 
 ```
 DPIsp/
@@ -38,11 +38,9 @@ DPIsp/
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-## Nota importante
+## Important note
 
-La licenza **si applica solo** al codice e ai contenuti originali creati dall'autore.
-L'esecuzione richiede Microsoft Excel, che **non** fa parte di questo progetto ed è
-soggetto ai termini di licenza Microsoft.
+The licence **applies only** to the original code and content created by the author. To run the program, you will need Microsoft Excel, which **is not** part of this project and is subject to Microsoft’s licence terms.
 
 © 2026 Domenico Longo
 
