@@ -54,6 +54,8 @@ Public Sub AggiornaDatiDaAzioniDPI()
     ' Tuning prestazioni
     ExcelLock
 
+    SostituisciCodiciUbicazione
+
     ' Recupero tabella e colonne
     Set lo = wsDati.ListObjects("tblDati")
     Set colScheda = lo.ListColumns("SCHEDA")

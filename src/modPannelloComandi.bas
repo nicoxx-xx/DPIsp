@@ -18,7 +18,7 @@ Attribute VB_Name = "modPannelloComandi"
 Option Explicit
 
 Public Const CREDITS As String = "Under GNU GPLv3 (see LICENSE_GPL), Copyright (c) 2026 Domenico Longo"
-Public Const APPVER As String = "v1.0.1"
+Public Const APPVER As String = "v1.0.2"
 Public Const MOD_BUTTON_PANEL_VERSION As String = "v2.7.0"
 Public Const MOD_MOUSESCROLL_VERSION As String = "v1.0.8"
 
@@ -116,7 +116,7 @@ Public Sub CreaPannelloComandi()
     AddButton sh, 50, 88, 260, 44, "Rigenera Schede PDF", "EsportaPDF_perRiga", RGB(0, 113, 188)
     AddButton sh, 50, 144, 260, 44, "Rigenera Layout PDF", "CreaLayoutMockup", RGB(0, 158, 73)
     AddButton sh, 50, 200, 260, 44, "Rigenera Pannello Comandi", "CreaPannelloComandi", RGB(220, 0, 120) ' RGB(94, 94, 94)
-    AddButton sh, 50, 256, 260, 44, "Rigenera Azioni Ispettive per DPI", "AggiornaDatiDaAzioniDPI", RGB(127, 0, 255)
+    AddButton sh, 50, 256, 260, 44, "Rigenera ubicazioni e Azioni Ispettive per DPI", "AggiornaDatiDaAzioniDPI", RGB(127, 0, 255)
     AddButton sh, 50, 312, 260, 44, "Incrementa Anno (Date + Next Inspection Date)", "IncrementaAnnoDate", RGB(20, 200, 90)
     AddButton sh, 50, 368, 260, 44, "Form inserimento/modifica dati", "MostraGestioneDPI", RGB(20, 90, 220)
 
@@ -153,6 +153,7 @@ Public Sub CreaPannelloComandi()
                     ChrW(8226) & " Se la data di prossima ispezione non deve essere inserita (p.e. se un DPI non ha superato il controllo), inserire 'nnn'" & vbCrLf & _
                     ChrW(8226) & " Nella colonna 'Result', le schede con esito positivo vanno marcate con 'ok', quelle con esito negativo, con 'ko'" & vbCrLf & _
                     ChrW(8226) & " La funzione 'Rigenera Schede PDF' effettua dei controlli formali sulle date e su campi vuoti." & vbCrLf & _
+                    ChrW(8226) & " Nel foglio 'Dati', è possibile inserire le ubicazioni solo con la sigla breve riportata nel foglio 'Ubicazioni'." & vbCrLf & _
                     ChrW(8226) & " Per assegnare le attività ispettive per un nuovo DPI inserito in tebella, assegnare la tipologia nella colonna 'SCHEDA'" & vbCrLf & _
                                  " secondo le tipologie di DPI previste nel foglio 'Azioni_DPI'; basta inserire solo il numero iniziale della colonna ID." & vbCrLf & _
                                  " Utilizzare poi il pulsante 'Rigenera Azioni Ispettive per DPI' per generare e assegnare l'elenco delle azioni ispettive per tutti i DPI della tebella." & vbCrLf & _
@@ -166,7 +167,6 @@ Public Sub CreaPannelloComandi()
                                  " Permette di verificare l'esistenza di duplicati sul foglio Dati. E' possibile effettuare eliminazioni di un record." & vbCrLf & _
                     ChrW(8226) & " I fogli non possono essere rinominati o cancellati per nessun motivo." & vbCrLf & _
                     ChrW(8226) & " Leggere anche le note presenti nei singoli fogli." & vbCrLf & _
-                                 " " & vbCrLf & _
                                  " " & vbCrLf & _
                                  "  ==> ATTENZIONE: l'applicativo genera in automatico documenti PDF firmati con firma olografa dell'Ispettore, che ha valore legale. La responsabilità della verifica della correttezza dei dati del documento PDF, rimane all'Ispettore. <=="
             .Font.Size = 10
