@@ -266,6 +266,88 @@ Uscita:
     ExcelUnlock
 End Sub
 
+Public Sub EliminaDatiDaFoglioDati()
+    Dim wbDst As Workbook, wsDst As Worksheet, loDst As ListObject
+    Dim scelta As VbMsgBoxResult
+    Dim v As Variant
+    Dim pwd As String
+    
+    ExcelLock
+    
+    '------------------ Scelta utente: Elimina o Esci
+    scelta = MsgBox("Vuoi CANCELLARE i dati esistenti?" & vbCrLf & _
+                    vbCrLf & _
+                    "Sì = Elimina (con richiesta password)" & vbCrLf & _
+                    "No = Interrompi", _
+                    vbQuestion + vbYesNo + vbDefaultButton2, "Elimina Dati")
+    If scelta = vbNo Then
+        MsgBox "Eliminazione annullata. Nessun dato è stato modificato o rimosso.", vbInformation, "Elimina Dati"
+        GoTo Uscita
+    End If
+    
+    ' Input alfanumerico: Application.InputBox con Type:=2
+    v = Application.InputBox( _
+            Prompt:="Inserisci la password:", _
+            Title:="Verifica password", _
+            Default:="", _
+            Type:=2)
+    
+    ' Se annulla, v = False
+    pwd = GetImpostazione("Password_fogli")
+    
+    If (v = False) Or (Len(Trim$(v)) = 0) Or (v <> pwd) Then
+        MsgBox "Password non valida. Nessun dato è stato modificato o rimosso.", vbInformation, "Verifica password"
+        GoTo Uscita
+    Else
+        scelta = MsgBox("Pasword corretta; confermi di voler CANCELLARE i dati esistenti?" & vbCrLf & _
+                        vbCrLf & _
+                        "Sì = Elimina definitivamente" & vbCrLf & _
+                        "No = Interrompi", _
+                        vbQuestion + vbYesNo + vbDefaultButton2, "Elimina Dati")
+        If scelta = vbNo Then
+            MsgBox "Eliminazione annullata. Nessun dato è stato modificato o rimosso.", vbInformation, "Elimina Dati"
+            GoTo Uscita
+        End If
+    End If
+     
+    
+    '------------------ Destinazione (.xlsm corrente)
+    Set wbDst = ThisWorkbook
+    Set wsDst = wbDst.Worksheets("Dati")
+    Set loDst = wsDst.ListObjects("tblDati")
+    
+    UnlockSheet wsDst
+    
+    ' rimuove eventuali filtri presenti
+    On Error Resume Next
+        If Not loDst.AutoFilter Is Nothing Then
+            If loDst.AutoFilter.FilterMode Then loDst.AutoFilter.ShowAllData
+        End If
+        If wsDst.FilterMode Then wsDst.ShowAllData
+    On Error GoTo 0
+       
+    Dim oldRows As Long
+    oldRows = 0
+    
+    If (scelta = vbYes) And (Not loDst.DataBodyRange Is Nothing) Then
+        oldRows = loDst.DataBodyRange.Rows.count
+        'Elimina tutte le righe esistenti della tabella
+        If (Not loDst.DataBodyRange Is Nothing) And (oldRows > 0) Then
+            loDst.DataBodyRange.Delete
+        End If
+    End If
+    
+    MsgBox "Eliminazione di [" & oldRows & "]" & IIf(oldRows = 1, " riga ", " righe ") & "effettuata.", vbInformation, "Elimina Dati"
+
+Uscita:
+    On Error Resume Next
+    ThisWorkbook.Worksheets("Dati").Activate
+    wsDst.Range("A1").Select
+    
+    LockSheet wsDst
+    
+    ExcelUnlock
+End Sub
 
 '------------------ Helpers ------------------
 

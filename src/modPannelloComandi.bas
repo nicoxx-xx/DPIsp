@@ -18,8 +18,8 @@ Attribute VB_Name = "modPannelloComandi"
 Option Explicit
 
 Public Const CREDITS As String = "Under GNU GPLv3 (see LICENSE_GPL), Copyright (c) 2026 Domenico Longo"
-Public Const APPVER As String = "v1.0.2"
-Public Const MOD_BUTTON_PANEL_VERSION As String = "v2.7.0"
+Public Const APPVER As String = "v1.0.3"
+Public Const MOD_BUTTON_PANEL_VERSION As String = "v2.7.1"
 Public Const MOD_MOUSESCROLL_VERSION As String = "v1.0.8"
 
 Public gRibbon As Object ' popolato da OnRibbonLoad
@@ -128,6 +128,7 @@ Public Sub CreaPannelloComandi()
     AddButton sh, 330, 256, 260, 44, "Esporta fogli ausiliari in .xlsx", "EsportaFogliAuxInXLSX", RGB(255, 99, 71)
     AddButton sh, 330, 312, 260, 44, "Importa fogli ausiliari da .xlsx", "ImportaFogliAuxDaXLSX", RGB(140, 80, 250)
     AddButton sh, 330, 368, 260, 44, "Blocca tutti i fogli con password", "BloccaFogli", RGB(215, 20, 150)
+    AddButton sh, 330, 424, 260, 44, "Elimina tutti i dati dal foglio Dati" & vbCrLf & "(dopo password e conferma)", "EliminaDatiDaFoglioDati", RGB(80, 210, 20)
     
     ' ---- Separatore ----
     'Dim sep As Shape
