@@ -278,7 +278,7 @@ Private Function NameWithoutExtension(ByVal fileName As String) As String
     Dim p As Long
     p = InStrRev(fileName, ".")
     If p > 0 Then
-        NameWithoutExtension = left$(fileName, p - 1)
+        NameWithoutExtension = Left$(fileName, p - 1)
     Else
         NameWithoutExtension = fileName
     End If

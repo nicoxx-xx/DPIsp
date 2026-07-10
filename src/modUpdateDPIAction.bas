@@ -34,9 +34,9 @@ Public Sub AggiornaDatiDaAzioniDPI()
     Dim colScheda As ListColumn, colReq As ListColumn
     Dim idCol As Long, tipoCol As Long, azioniCol As Long
     Dim lastRowAz As Long
-    Dim r As Long, nRows As Long
+    Dim R As Long, nRows As Long
     Dim schedaCell As Range, reqCell As Range
-    Dim valScheda As String, codice As String
+    Dim valScheda As String, Codice As String
     Dim arr As Variant
     Dim dictText As Object, dictNum As Object ' Scripting.Dictionary (late binding)
     Dim n As Long
@@ -72,7 +72,7 @@ Public Sub AggiornaDatiDaAzioniDPI()
             "Richieste: 'ID', 'Tipo DPI', 'Azioni Ispettive' (riga 1)."
     End If
 
-    lastRowAz = wsAzioni.Cells(wsAzioni.Rows.count, idCol).End(xlUp).row
+    lastRowAz = wsAzioni.Cells(wsAzioni.Rows.count, idCol).End(xlUp).Row
     If lastRowAz < 2 Then
         Err.Raise vbObjectError + 514, , "Il foglio 'Azioni_DPI' non contiene righe dati."
     End If
@@ -128,19 +128,19 @@ Public Sub AggiornaDatiDaAzioniDPI()
     Dim found As Boolean
     Dim newSchedaText As String
 
-    For r = 1 To nRows
-        Set schedaCell = colScheda.DataBodyRange.Cells(r, 1)
-        Set reqCell = colReq.DataBodyRange.Cells(r, 1)
+    For R = 1 To nRows
+        Set schedaCell = colScheda.DataBodyRange.Cells(R, 1)
+        Set reqCell = colReq.DataBodyRange.Cells(R, 1)
 
         valScheda = Trim$(CStr(schedaCell.value))
-        If lo.ListRows(r).Range.EntireRow.Hidden Then GoTo NextR
+        If lo.ListRows(R).Range.EntireRow.Hidden Then GoTo NextR
         If Len(valScheda) = 0 Then
             ' Riga considerata vuota per lo scopo: skip
             GoTo NextR
         End If
 
-        codice = ExtractNumericCode(valScheda, 2) ' gli ID delle azioni ispettive hanno solo 2 cifre (1..99 max)
-        If Len(codice) = 0 Then
+        Codice = ExtractNumericCode(valScheda, 2) ' gli ID delle azioni ispettive hanno solo 2 cifre (1..99 max)
+        If Len(Codice) = 0 Then
             ' Nessun codice estraibile
             LogRow wsLog, Now, valScheda, "", "Nessun codice numerico", ""
             noCode = noCode + 1
@@ -149,12 +149,12 @@ Public Sub AggiornaDatiDaAzioniDPI()
 
         found = False
         ' 1) Match testuale esatto su ID
-        If dictText.exists(codice) Then
-            arr = dictText(codice)
+        If dictText.exists(Codice) Then
+            arr = dictText(Codice)
             found = True
         Else
             ' 2) Match per equivalenza numerica (ignora zeri iniziali etc.)
-            n = CLng(codice)
+            n = CLng(Codice)
             If dictNum.exists(n) Then
                 arr = dictNum(n)
                 found = True
@@ -167,12 +167,12 @@ Public Sub AggiornaDatiDaAzioniDPI()
             reqCell.value = CStr(arr(2))                          ' "Azioni Ispettive"
             processed = processed + 1
         Else
-            LogRow wsLog, Now, valScheda, codice, "ID non trovato", ""
+            LogRow wsLog, Now, valScheda, Codice, "ID non trovato", ""
             notFound = notFound + 1
         End If
 
 NextR:
-    Next r
+    Next R
 
     ExcelUnlock
     
@@ -262,12 +262,12 @@ Private Function PrepareLogSheet(ByVal wb As Workbook, ByVal sheetName As String
     Set PrepareLogSheet = ws
 End Function
 
-Private Sub LogRow(ByVal ws As Worksheet, ByVal ts As Date, ByVal schedaOriginale As String, ByVal codice As String, ByVal esito As String, ByVal nota As String)
+Private Sub LogRow(ByVal ws As Worksheet, ByVal ts As Date, ByVal schedaOriginale As String, ByVal Codice As String, ByVal esito As String, ByVal nota As String)
     Dim nextRow As Long
-    nextRow = ws.Cells(ws.Rows.count, 1).End(xlUp).row + 1
+    nextRow = ws.Cells(ws.Rows.count, 1).End(xlUp).Row + 1
     ws.Cells(nextRow, 1).value = ts
     ws.Cells(nextRow, 2).value = schedaOriginale
-    ws.Cells(nextRow, 3).value = codice
+    ws.Cells(nextRow, 3).value = Codice
     ws.Cells(nextRow, 4).value = esito
     ws.Cells(nextRow, 5).value = nota
 End Sub

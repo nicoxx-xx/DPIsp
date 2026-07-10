@@ -81,8 +81,8 @@ Option Private Module
 #Else
 
 Private Type POINTAPI
-    x As Long
-    y As Long
+    X As Long
+    Y As Long
 End Type
 
 'API declarations
@@ -346,7 +346,7 @@ Private Sub HookMouseIfNeeded()
             aPtr = VirtualAlloc(0, 160, MEM_COMMIT, PAGE_EXECUTE_READWRITE)
             SetEnvironmentVariable "MouseScroll", CStr(aPtr)
         Else
-            aPtr = CLngLng(left$(buff, l))
+            aPtr = CLngLng(Left$(buff, l))
         End If
         aPtr2 = aPtr + 91
 #Else
@@ -617,7 +617,7 @@ Public Sub ProcessMouseData(ByVal ncode As Long _
         Dim className As String: className = Space$(&HFF)
         '
         If IsChild(fHWnd, pHWnd) = 0 Then GoTo DelayHookAsync
-        className = left$(className, GetClassName(pHWnd, className, Len(className)))
+        className = Left$(className, GetClassName(pHWnd, className, Len(className)))
         If Not (className Like "F3 Server*") Then GoTo DelayHookAsync
     End If
     '
@@ -663,21 +663,21 @@ Public Sub ProcessMouseData(ByVal ncode As Long _
         Const VK_MBUTTON As Long = &H4
         '
         If wParam = WM_MBUTTONDOWN Then
-            lastX = lParam.tagMOUSEHOOKSTRUCT.pt.x
-            lastY = lParam.tagMOUSEHOOKSTRUCT.pt.y
+            lastX = lParam.tagMOUSEHOOKSTRUCT.pt.X
+            lastY = lParam.tagMOUSEHOOKSTRUCT.pt.Y
         End If
         '
         If GetKeyState(VK_MBUTTON) And &H8000 Then
             If IsShiftKeyDown() Then
-                scrollAmount.lines = sLines * Sgn(lastX - lParam.tagMOUSEHOOKSTRUCT.pt.x)
+                scrollAmount.lines = sLines * Sgn(lastX - lParam.tagMOUSEHOOKSTRUCT.pt.X)
                 If m_isLastComboOn Then GoTo DelayHookAsync
                 Call ScrollX(m_lastHoveredControl.GetControl, scrollAmount)
             Else
-                scrollAmount.lines = sLines * Sgn(lastY - lParam.tagMOUSEHOOKSTRUCT.pt.y)
+                scrollAmount.lines = sLines * Sgn(lastY - lParam.tagMOUSEHOOKSTRUCT.pt.Y)
                 Call ScrollY(m_lastHoveredControl.GetControl, scrollAmount)
             End If
-            lastX = lParam.tagMOUSEHOOKSTRUCT.pt.x
-            lastY = lParam.tagMOUSEHOOKSTRUCT.pt.y
+            lastX = lParam.tagMOUSEHOOKSTRUCT.pt.X
+            lastY = lParam.tagMOUSEHOOKSTRUCT.pt.Y
         End If
         '
         'Mouse side buttons example:
@@ -1229,7 +1229,7 @@ Private Function GetWindowUnderCursor() As LongPtr
     #If Win64 Then
         GetWindowUnderCursor = WindowFromPoint(MemLongPtr(VarPtr(pt)))
     #Else
-        GetWindowUnderCursor = WindowFromPoint(pt.x, pt.y)
+        GetWindowUnderCursor = WindowFromPoint(pt.X, pt.Y)
     #End If
 End Function
 

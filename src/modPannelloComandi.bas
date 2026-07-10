@@ -18,8 +18,8 @@ Attribute VB_Name = "modPannelloComandi"
 Option Explicit
 
 Public Const CREDITS As String = "Under GNU GPLv3 (see LICENSE_GPL), Copyright (c) 2026 Domenico Longo"
-Public Const APPVER As String = "v1.0.3"
-Public Const MOD_BUTTON_PANEL_VERSION As String = "v2.7.1"
+Public Const APPVER As String = "v1.0.6"
+Public Const MOD_BUTTON_PANEL_VERSION As String = "v2.7.2"
 Public Const MOD_MOUSESCROLL_VERSION As String = "v1.0.8"
 
 Public gRibbon As Object ' popolato da OnRibbonLoad
@@ -247,12 +247,12 @@ Public Sub CreaPannelloComandi()
     On Error GoTo 0
     
     If Not target Is Nothing Then
-        Set pic = sh.Shapes.AddPicture(logoTPath, msoFalse, msoTrue, target.left, target.top, -1, -1)
+        Set pic = sh.Shapes.AddPicture(logoTPath, msoFalse, msoTrue, target.Left, target.Top, -1, -1)
         pic.LockAspectRatio = msoTrue
         sx = target.Width / pic.Width: sy = target.Height / pic.Height
         scaleF = IIf(sx < sy, sx, sy): If scaleF < 1 Then pic.Width = pic.Width * scaleF
-        pic.left = target.left + (target.Width - pic.Width) / 2
-        pic.top = target.top + (target.Height - pic.Height) / 2
+        pic.Left = target.Left + (target.Width - pic.Width) / 2
+        pic.Top = target.Top + (target.Height - pic.Height) / 2
         target.Visible = msoFalse: pic.Name = "LogoThickImg"
 
         With pic.Shadow
@@ -282,12 +282,12 @@ End Sub
 
 ' === Utility per creare pulsanti ===
 Private Sub AddButton(ByVal sh As Worksheet, _
-                      ByVal x As Single, ByVal y As Single, _
+                      ByVal X As Single, ByVal Y As Single, _
                       ByVal W As Single, ByVal H As Single, _
                       ByVal testo As String, ByVal macroName As String, _
                       ByVal colorRGB As Long)
     Dim b As Shape
-    Set b = sh.Shapes.AddShape(msoShapeRoundedRectangle, x, y, W, H)
+    Set b = sh.Shapes.AddShape(msoShapeRoundedRectangle, X, Y, W, H)
     With b
         .Locked = True
         .Name = "Btn_" & Replace(testo, " ", "_")
@@ -315,7 +315,7 @@ Public Sub ApriCartellaPDF()
     'If Len(p) = 0 Then p = ThisWorkbook.Path
     p = ResolveExportPath(p)
     p = NormalizePathLite(p)
-    If Right$(p, 1) = "\" Or Right$(p, 1) = "/" Then p = left$(p, Len(p) - 1)
+    If Right$(p, 1) = "\" Or Right$(p, 1) = "/" Then p = Left$(p, Len(p) - 1)
     Shell "explorer.exe " & Chr$(34) & p & Chr$(34), vbNormalFocus
 End Sub
 
@@ -335,7 +335,7 @@ Private Function NormalizePathLite(ByVal p As String) As String
     s = Trim$(p)
     If Len(s) = 0 Then NormalizePathLite = "": Exit Function
     s = Replace(s, "/", "\")
-    Do While InStr(s, "\\\\") > 0 And left$(s, 2) <> "\\\\"
+    Do While InStr(s, "\\\\") > 0 And Left$(s, 2) <> "\\\\"
         s = Replace(s, "\\\\", "\")
     Loop
     NormalizePathLite = s
@@ -367,7 +367,7 @@ Private Function ResolveExportPath(pathText As String) As String
     
     ' 3) Path relativo
     ' Se inizia con "\" (equivalente a "/"), rimuovilo
-    If left$(T, 1) = "\" Then
+    If Left$(T, 1) = "\" Then
         T = Mid$(T, 2)
     End If
     
@@ -381,7 +381,7 @@ Public Function ControllaCampiObbligatori() As Boolean
     Dim lo As ListObject
     Dim must() As Variant
     Dim miss As String
-    Dim r As ListRow
+    Dim R As ListRow
     Dim i As Long
     Dim v As Variant
 
@@ -398,16 +398,16 @@ Public Function ControllaCampiObbligatori() As Boolean
     "Date of First Use", "Next Ispection Date", "Date for retirement", "Required inspection activities")
     miss = ""
 
-    For Each r In lo.ListRows
-        If (Not r.Range.EntireRow.Hidden) And (Application.WorksheetFunction.CountIf(r.Range, "<>") <> 0) Then ' non verificare righe vuote
+    For Each R In lo.ListRows
+        If (Not R.Range.EntireRow.Hidden) And (Application.WorksheetFunction.CountIf(R.Range, "<>") <> 0) Then ' non verificare righe vuote
             For i = LBound(must) To UBound(must)
-                v = GetValue(lo, r, CStr(must(i)))
+                v = GetValue(lo, R, CStr(must(i)))
                 If Len(Trim$(CStr(v))) = 0 Then
-                    miss = miss & "Riga " & (r.Index + 1) & ": manca -> " & CStr(must(i)) & vbCrLf   ' header row is not in ListRows
+                    miss = miss & "Riga " & (R.Index + 1) & ": manca -> " & CStr(must(i)) & vbCrLf   ' header row is not in ListRows
                 End If
             Next i
         End If
-    Next r
+    Next R
 
     If Len(miss) = 0 Then
         ControllaCampiObbligatori = True
@@ -419,14 +419,14 @@ Public Function ControllaCampiObbligatori() As Boolean
     End If
 End Function
 
-Private Function GetValue(ByVal lo As ListObject, ByVal r As ListRow, ByVal colName As String) As Variant
+Private Function GetValue(ByVal lo As ListObject, ByVal R As ListRow, ByVal colName As String) As Variant
     Dim lc As ListColumn
     On Error Resume Next
     Set lc = lo.ListColumns(colName)
     If lc Is Nothing Then
         GetValue = ""
     Else
-        GetValue = r.Range.Cells(1, lc.Index).value
+        GetValue = R.Range.Cells(1, lc.Index).value
     End If
 End Function
 
@@ -436,7 +436,7 @@ End Function
 Public Function VerificaDateFormali() As Boolean
     Dim sh As Worksheet
     Dim lo As ListObject
-    Dim r As ListRow
+    Dim R As ListRow
     Dim cols As Variant
     Dim rep As String
     Dim issues As Long
@@ -458,21 +458,21 @@ Public Function VerificaDateFormali() As Boolean
     
     ClearDateHighlights lo, cols
 
-    For Each r In lo.ListRows
-        If (Not r.Range.EntireRow.Hidden) And (Application.WorksheetFunction.CountIf(r.Range, "<>") <> 0) Then      ' non verificare righe vuote
+    For Each R In lo.ListRows
+        If (Not R.Range.EntireRow.Hidden) And (Application.WorksheetFunction.CountIf(R.Range, "<>") <> 0) Then      ' non verificare righe vuote
             Dim i As Long
             Dim colName As String
             For i = LBound(cols) To UBound(cols)
                 colName = CStr(cols(i))
-                If Not IsValidDateCell(lo, r, colName) Then
-                    HighlightCell lo, r, colName, RGB(255, 199, 206)
+                If Not IsValidDateCell(lo, R, colName) Then
+                    HighlightCell lo, R, colName, RGB(255, 199, 206)
                     ' header row is not in ListRows
-                    rep = rep & "Riga " & (r.Index + 1) & ": data non valida in '" & colName & "' -> '" & CStr(GetValue(lo, r, colName)) & "'" & vbCrLf
+                    rep = rep & "Riga " & (R.Index + 1) & ": data non valida in '" & colName & "' -> '" & CStr(GetValue(lo, R, colName)) & "'" & vbCrLf
                     issues = issues + 1
                 End If
             Next i
         End If
-    Next r
+    Next R
 
     ExcelUnlock
 
@@ -492,31 +492,31 @@ End Function
 Private Sub ClearDateHighlights(ByVal lo As ListObject, ByVal cols As Variant)
     Dim i As Long
     Dim lc As ListColumn
-    Dim r As Long
+    Dim R As Long
     For i = LBound(cols) To UBound(cols)
         On Error Resume Next
         Set lc = lo.ListColumns(CStr(cols(i)))
         If Not lc Is Nothing Then
-            For r = 1 To lo.ListRows.count
-                lc.DataBodyRange.Cells(r, 1).Interior.ColorIndex = xlColorIndexNone
-            Next r
+            For R = 1 To lo.ListRows.count
+                lc.DataBodyRange.Cells(R, 1).Interior.ColorIndex = xlColorIndexNone
+            Next R
         End If
         On Error GoTo 0
     Next i
 End Sub
 
-Private Sub HighlightCell(ByVal lo As ListObject, ByVal r As ListRow, ByVal colName As String, ByVal clr As Long)
+Private Sub HighlightCell(ByVal lo As ListObject, ByVal R As ListRow, ByVal colName As String, ByVal clr As Long)
     Dim lc As ListColumn
     On Error Resume Next
     Set lc = lo.ListColumns(colName)
-    If Not lc Is Nothing Then lc.DataBodyRange.Cells(r.Index, 1).Interior.Color = clr
+    If Not lc Is Nothing Then lc.DataBodyRange.Cells(R.Index, 1).Interior.Color = clr
     On Error GoTo 0
 End Sub
 
-Private Function IsValidDateCell(ByVal lo As ListObject, ByVal r As ListRow, ByVal colName As String) As Boolean
+Private Function IsValidDateCell(ByVal lo As ListObject, ByVal R As ListRow, ByVal colName As String) As Boolean
     Dim v As Variant
     Dim d As Variant
-    v = GetValue(lo, r, colName)
+    v = GetValue(lo, R, colName)
     If IsEmpty(v) Or Len(Trim$(CStr(v))) = 0 Then
         IsValidDateCell = False
         Exit Function
@@ -572,7 +572,7 @@ End Function
 Public Sub IncrementaAnnoDate()
     Dim sh As Worksheet
     Dim lo As ListObject
-    Dim r As ListRow
+    Dim R As ListRow
     Dim addYears As Long
     Dim resp As Variant
 
@@ -607,14 +607,14 @@ Public Sub IncrementaAnnoDate()
 
     Dim i As Long
     Dim colName As String
-    For Each r In lo.ListRows
-        If Not r.Range.EntireRow.Hidden Then
+    For Each R In lo.ListRows
+        If Not R.Range.EntireRow.Hidden Then
             For i = LBound(targetCols) To UBound(targetCols)
                 colName = CStr(targetCols(i))
-                AddYearsToCell lo, r, colName, addYears
+                AddYearsToCell lo, R, colName, addYears
             Next i
         End If
-    Next r
+    Next R
 
     ExcelUnlock
     
@@ -623,7 +623,7 @@ Public Sub IncrementaAnnoDate()
     MsgBox "Anno incrementato di " & addYears & " per le colonne 'Date' e 'Next Ispection Date' (righe visibili).", vbInformation, "Incremento date completato"
 End Sub
 
-Private Sub AddYearsToCell(ByVal lo As ListObject, ByVal r As ListRow, ByVal colName As String, ByVal nYears As Long)
+Private Sub AddYearsToCell(ByVal lo As ListObject, ByVal R As ListRow, ByVal colName As String, ByVal nYears As Long)
     Dim lc As ListColumn
     Dim v As Variant
     Dim d As Variant
@@ -633,10 +633,10 @@ Private Sub AddYearsToCell(ByVal lo As ListObject, ByVal r As ListRow, ByVal col
     On Error GoTo 0
     If lc Is Nothing Then Exit Sub
 
-    v = lc.DataBodyRange.Cells(r.Index, 1).value
+    v = lc.DataBodyRange.Cells(R.Index, 1).value
     d = TryParseDate(v)
     If Not IsEmpty(d) Then
-        lc.DataBodyRange.Cells(r.Index, 1).value = SafeAddYears(d, nYears)
+        lc.DataBodyRange.Cells(R.Index, 1).value = SafeAddYears(d, nYears)
     End If
 End Sub
 
@@ -714,8 +714,8 @@ Public Sub SostituisciCodiciUbicazione()
     Dim wsUbicazioni As Worksheet
     Dim lo As ListObject
     Dim dict As Object
-    Dim r As ListRow
-    Dim codice As String
+    Dim R As ListRow
+    Dim Codice As String
     Dim colUbic As Long
     
     '--- fogli
@@ -739,7 +739,7 @@ Public Sub SostituisciCodiciUbicazione()
     Set dict = CreateObject("Scripting.Dictionary")
     dict.CompareMode = 1   'TextCompare
     
-    Dim lastRow As Long
+    Dim LastRow As Long
     Dim i As Long
     Dim codiceFoglio As String
     Dim esteso As String
@@ -747,13 +747,13 @@ Public Sub SostituisciCodiciUbicazione()
     ExcelLock
     
     '--- ultima riga foglio Ubicazioni
-    lastRow = wsUbicazioni.Cells(wsUbicazioni.Rows.count, "A").End(xlUp).row
+    LastRow = wsUbicazioni.Cells(wsUbicazioni.Rows.count, "A").End(xlUp).Row
     
     '--- carica codici e ubicazioni estese
     ' Colonna A = ID? (ignorata)
     ' Colonna B = Ubicazione (codice)
     ' Colonna C = UbicazioneEstesa
-    For i = 2 To lastRow
+    For i = 2 To LastRow
         codiceFoglio = Trim(wsUbicazioni.Cells(i, "B").value)
         esteso = wsUbicazioni.Cells(i, "C").value
         
@@ -764,18 +764,18 @@ Public Sub SostituisciCodiciUbicazione()
     
     '--- scorre tutte le righe della tabella (anche filtrate)
     UnlockSheet wsDati
-    For Each r In lo.ListRows
+    For Each R In lo.ListRows
         
-        codice = Trim(r.Range.Cells(1, colUbic).value)
-        codice = UCase(codice)
+        Codice = Trim(R.Range.Cells(1, colUbic).value)
+        Codice = UCase(Codice)
         
         'se il codice esiste nel dizionario ? sostituisci
-        If dict.exists(codice) Then
-            r.Range.Cells(1, colUbic).value = dict(codice)
+        If dict.exists(Codice) Then
+            R.Range.Cells(1, colUbic).value = dict(Codice)
         End If
         
         'se NON esiste ? lascia il valore così com'è
-    Next r
+    Next R
     
     LockSheet wsDati
     ExcelUnlock

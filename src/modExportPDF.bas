@@ -63,7 +63,7 @@ End Function
 Private Function NormalizePath(ByVal p As String) As String
     Dim s As String
     s = Replace(Trim$(p), "/", "\")
-    Do While InStr(s, "\\") > 0 And left$(s, 2) <> "\\"
+    Do While InStr(s, "\\") > 0 And Left$(s, 2) <> "\\"
         s = Replace(s, "\\", "\")
     Loop
     If Len(s) > 0 And Right$(s, 1) <> "\" Then s = s & "\"
@@ -76,7 +76,7 @@ Private Sub EnsureFolder(ByVal p As String)
     If Len(base) = 0 Then Exit Sub
 
     On Error Resume Next
-    If left$(base, 2) = "\\" Then
+    If Left$(base, 2) = "\\" Then
         parts = Split(Mid$(base, 3), "\")
         If UBound(parts) >= 1 Then
             cur = "\\" & parts(0) & "\" & parts(1)
@@ -88,7 +88,7 @@ Private Sub EnsureFolder(ByVal p As String)
             Next i
         End If
     Else
-        cur = left$(base, 3)
+        cur = Left$(base, 3)
         parts = Split(Mid$(base, 4), "\")
         For i = 0 To UBound(parts)
             If Len(parts(i)) > 0 Then
@@ -122,7 +122,7 @@ Private Function TruncateFileName(ByVal s As String, Optional ByVal maxLen As Lo
     If Len(s) <= maxLen Then
         TruncateFileName = s
     Else
-        TruncateFileName = left$(s, maxLen)
+        TruncateFileName = Left$(s, maxLen)
     End If
 End Function
 
@@ -132,7 +132,7 @@ Private Function GetPdfName(ByVal dict As Object, ByVal pattern As String) As St
 
     If pattern = "{{Filename}}" And dict.exists("Filename") Then
         T = CStr(dict("Filename"))
-        If LCase$(Right$(T, 4)) = ".pdf" Then T = left$(T, Len(T) - 4)
+        If LCase$(Right$(T, 4)) = ".pdf" Then T = Left$(T, Len(T) - 4)
         GetPdfName = Sanitize(T)
         Exit Function
     End If
@@ -144,7 +144,7 @@ Private Function GetPdfName(ByVal dict As Object, ByVal pattern As String) As St
         If p2 = 0 Then Exit Do
         key = Mid$(T, p1 + 2, p2 - (p1 + 2))
         If dict.exists(key) Then val = CStr(dict(key)) Else val = ""
-        T = left$(T, p1 - 1) & val & Mid$(T, p2 + 2)
+        T = Left$(T, p1 - 1) & val & Mid$(T, p2 + 2)
     Loop
 
     GetPdfName = Sanitize(T)
@@ -176,7 +176,7 @@ Private Function ResolveExportPath(pathText As String) As String
     
     ' 3) Path relativo
     ' Se inizia con "\" (equivalente a "/"), rimuovilo
-    If left$(T, 1) = "\" Then
+    If Left$(T, 1) = "\" Then
         T = Mid$(T, 2)
     End If
     
@@ -187,12 +187,12 @@ End Function
 ' =====================================================
 '   DIZIONARIO RIGA
 ' =====================================================
-Private Function DizionarioDaRiga(ByVal lo As ListObject, ByVal r As ListRow) As Object
+Private Function DizionarioDaRiga(ByVal lo As ListObject, ByVal R As ListRow) As Object
     Dim d As Object: Set d = CreateObject("Scripting.Dictionary")
     Dim i As Long, campo As String, v As Variant
     For i = 1 To lo.ListColumns.count
         campo = lo.ListColumns(i).Name
-        v = r.Range.Cells(1, i).value
+        v = R.Range.Cells(1, i).value
         If IsNull(v) Or IsError(v) Then v = ""
         d(campo) = v
     Next i
@@ -283,7 +283,7 @@ Private Sub InserisciFirmaImmagine(ByVal sh As Worksheet)
     Next s
 
     Set pic = sh.Shapes.AddPicture(fileName:=f, LinkToFile:=msoFalse, SaveWithDocument:=msoTrue, _
-                                   left:=target.left, top:=target.top, Width:=-1, Height:=-1)
+                                   Left:=target.Left, Top:=target.Top, Width:=-1, Height:=-1)
     If pic Is Nothing Then Exit Sub
 
     pic.LockAspectRatio = msoTrue
@@ -292,8 +292,8 @@ Private Sub InserisciFirmaImmagine(ByVal sh As Worksheet)
     sc = IIf(sx < sy, sx, sy)
     If sc < 1 Then pic.Width = pic.Width * sc
 
-    pic.left = target.left + (target.Width - pic.Width) / 2
-    pic.top = target.top + (target.Height - pic.Height) / 2
+    pic.Left = target.Left + (target.Width - pic.Width) / 2
+    pic.Top = target.Top + (target.Height - pic.Height) / 2
     pic.Name = "FirmaImage"
     pic.line.Visible = msoFalse
 End Sub
@@ -341,8 +341,8 @@ Private Sub EnsureAzioniMap()
     If sh Is Nothing Then Exit Sub
 
     Dim hdrRow As Long: hdrRow = 1
-    Dim lastRow As Long: lastRow = sh.Cells(sh.Rows.count, 1).End(xlUp).row
-    If lastRow < hdrRow + 1 Then Exit Sub
+    Dim LastRow As Long: LastRow = sh.Cells(sh.Rows.count, 1).End(xlUp).Row
+    If LastRow < hdrRow + 1 Then Exit Sub
 
     Dim colID As Long, colFase As Long, colAtt As Long
     colID = FindHeaderCol(sh, hdrRow, "ID")
@@ -352,16 +352,16 @@ Private Sub EnsureAzioniMap()
     If colFase = 0 Then colFase = 2
     If colAtt = 0 Then colAtt = 3
 
-    Dim r As Long, kText As String, kNorm As String, kNum As String
-    Dim fase As String, att As String, desc As String
+    Dim R As Long, kText As String, kNorm As String, kNum As String
+    Dim Fase As String, att As String, desc As String
 
-    For r = hdrRow + 1 To lastRow
-        kText = Trim$(CStr(sh.Cells(r, colID).text)) ' preserva zeri iniziali
+    For R = hdrRow + 1 To LastRow
+        kText = Trim$(CStr(sh.Cells(R, colID).text)) ' preserva zeri iniziali
         If Len(kText) > 0 Then
-            fase = Trim$(CStr(sh.Cells(r, colFase).value))
-            att = Trim$(CStr(sh.Cells(r, colAtt).value))
-            If Len(fase) > 0 Then
-                desc = UCase$(kText) & " " & ChrW(8212) & " " & fase & ":" & vbCrLf & att
+            Fase = Trim$(CStr(sh.Cells(R, colFase).value))
+            att = Trim$(CStr(sh.Cells(R, colAtt).value))
+            If Len(Fase) > 0 Then
+                desc = UCase$(kText) & " " & ChrW(8212) & " " & Fase & ":" & vbCrLf & att
             Else
                 desc = UCase$(kText) & " " & ChrW(8212) & " " & att
             End If
@@ -372,7 +372,7 @@ Private Sub EnsureAzioniMap()
             gAzioni(kNorm) = desc
             If Len(kNum) > 0 Then gAzioni(kNum) = desc
         End If
-    Next r
+    Next R
 End Sub
 
 Private Function FindHeaderCol(ByVal sh As Worksheet, ByVal hdrRow As Long, ByVal headerText As String) As Long
@@ -478,25 +478,25 @@ End Sub
 ' =====================================================
 '   LOG (BUFFER CIRCOLARE: max 1000 righe totali)
 ' =====================================================
-Private Sub LogEsito(ByVal id As String, ByVal esito As String, ByVal pathPdf As String)
+Private Sub LogEsito(ByVal ID As String, ByVal esito As String, ByVal pathPdf As String)
     On Error Resume Next
     Dim sh As Worksheet
-    Dim lastRow As Long, del As Long
+    Dim LastRow As Long, del As Long
 
     Set sh = ThisWorkbook.Worksheets(NOME_LOG)
-    lastRow = sh.Cells(sh.Rows.count, 1).End(xlUp).row
+    LastRow = sh.Cells(sh.Rows.count, 1).End(xlUp).Row
     UnlockSheet sh
     
-    If lastRow >= 1001 Then
-        del = lastRow - 999   ' mantieni header + 999 righe
+    If LastRow >= 1001 Then
+        del = LastRow - 999   ' mantieni header + 999 righe
         sh.Rows("2:" & (1 + del)).Delete
-        lastRow = sh.Cells(sh.Rows.count, 1).End(xlUp).row
+        LastRow = sh.Cells(sh.Rows.count, 1).End(xlUp).Row
     End If
 
-    sh.Cells(lastRow + 1, 1).value = Now
-    sh.Cells(lastRow + 1, 2).value = id
-    sh.Cells(lastRow + 1, 3).value = esito
-    sh.Cells(lastRow + 1, 4).value = pathPdf
+    sh.Cells(LastRow + 1, 1).value = Now
+    sh.Cells(LastRow + 1, 2).value = ID
+    sh.Cells(LastRow + 1, 3).value = esito
+    sh.Cells(LastRow + 1, 4).value = pathPdf
     
     LockSheet sh
 End Sub
@@ -602,7 +602,7 @@ Public Sub EsportaPDF_perRiga()
     Dim pattern As String: pattern = GetImpostazione("FileNamePattern")
     If Len(pattern) = 0 Then pattern = "{{Filename}}"
 
-    Dim r As ListRow, tmp As Worksheet
+    Dim R As ListRow, tmp As Worksheet
     Dim dict As Object
     Dim fName As String, fullpath As String
     Dim idLog As String
@@ -617,11 +617,11 @@ Public Sub EsportaPDF_perRiga()
 
     exportedOK = 0
     
-    For Each r In lo.ListRows
-        If r.Range.EntireRow.Hidden Then GoTo NextR
-        If Application.WorksheetFunction.CountIf(r.Range, "<>") = 0 Then GoTo NextR     ' non esportare righe vuote
+    For Each R In lo.ListRows
+        If R.Range.EntireRow.Hidden Then GoTo NextR
+        If Application.WorksheetFunction.CountIf(R.Range, "<>") = 0 Then GoTo NextR     ' non esportare righe vuote
 
-        Set dict = DizionarioDaRiga(lo, r)
+        Set dict = DizionarioDaRiga(lo, R)
 
         ' Valori globali da Impostazioni:
         dict("Ispettore") = GetImpostazione("Ispettore")
@@ -654,7 +654,7 @@ CleanTmp:
         If Not tmp Is Nothing Then SafeDeleteSheet tmp.Name
 
 NextR:
-    Next r
+    Next R
 
 CleanExit:
     ExcelUnlock

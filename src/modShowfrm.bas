@@ -17,7 +17,7 @@ Attribute VB_Name = "modShowfrm"
 
 Option Explicit
 
-Public Const MOD_INPUT_FORM_VERSION As String = "v2.0.0"
+Public Const MOD_INPUT_FORM_VERSION As String = "v2.1.0"
 
 Public Sub MostraGestioneDPI()
     frmDPI.Show

@@ -225,7 +225,7 @@ Public Sub CreaLayoutMockup()
     ann.line.ForeColor.RGB = RGB(220, 220, 220)
 
     ' ---- Attività  richieste (resta invariata, sopra i pannelli in basso) ----
-    Dim attTop As Single: attTop = es.top + es.Height + 12
+    Dim attTop As Single: attTop = es.Top + es.Height + 12
     Dim attH As Single: attH = firmaTop - attTop - bottomPad
     If attH < 80 Then attH = 80
 
@@ -237,7 +237,7 @@ Public Sub CreaLayoutMockup()
 
     ' Barra decorativa
     Dim bar As Shape
-    Set bar = sh.Shapes.AddShape(msoShapeRectangle, x0, att.top, 6, att.Height)
+    Set bar = sh.Shapes.AddShape(msoShapeRectangle, x0, att.Top, 6, att.Height)
     bar.line.Visible = msoFalse
     bar.Fill.ForeColor.RGB = RGB(255, 199, 44)
 
@@ -273,24 +273,24 @@ Public Sub InserisciLoghiCNSAS(ByVal sh As Worksheet)
     ' --- sinistra ---
     On Error Resume Next: Set target = sh.Shapes("LogoLeft"): On Error GoTo 0
     If Not target Is Nothing Then
-        Set pic = sh.Shapes.AddPicture(logoPath, msoFalse, msoTrue, target.left, target.top, -1, -1)
+        Set pic = sh.Shapes.AddPicture(logoPath, msoFalse, msoTrue, target.Left, target.Top, -1, -1)
         pic.LockAspectRatio = msoTrue
         sx = target.Width / pic.Width: sy = target.Height / pic.Height
         scaleF = IIf(sx < sy, sx, sy): If scaleF < 1 Then pic.Width = pic.Width * scaleF
-        pic.left = target.left + (target.Width - pic.Width) / 2
-        pic.top = target.top + (target.Height - pic.Height) / 2
+        pic.Left = target.Left + (target.Width - pic.Width) / 2
+        pic.Top = target.Top + (target.Height - pic.Height) / 2
         target.Visible = msoFalse: pic.Name = "LogoLeftImg"
     End If
 
     ' --- destra ---
     On Error Resume Next: Set target = sh.Shapes("LogoRight"): On Error GoTo 0
     If Not target Is Nothing Then
-        Set pic = sh.Shapes.AddPicture(logoPath, msoFalse, msoTrue, target.left, target.top, -1, -1)
+        Set pic = sh.Shapes.AddPicture(logoPath, msoFalse, msoTrue, target.Left, target.Top, -1, -1)
         pic.LockAspectRatio = msoTrue
         sx = target.Width / pic.Width: sy = target.Height / pic.Height
         scaleF = IIf(sx < sy, sx, sy): If scaleF < 1 Then pic.Width = pic.Width * scaleF
-        pic.left = target.left + (target.Width - pic.Width) / 2
-        pic.top = target.top + (target.Height - pic.Height) / 2
+        pic.Left = target.Left + (target.Width - pic.Width) / 2
+        pic.Top = target.Top + (target.Height - pic.Height) / 2
         target.Visible = msoFalse: pic.Name = "LogoRightImg"
     End If
 End Sub
@@ -298,17 +298,17 @@ End Sub
 ' ===============================
 ' Utility: riga etichetta/valore
 ' ===============================
-Private Sub AddRow(ByVal sh As Worksheet, ByVal x As Single, ByVal y As Single, _
+Private Sub AddRow(ByVal sh As Worksheet, ByVal X As Single, ByVal Y As Single, _
                    ByVal wLbl As Single, ByVal wVal As Single, _
                    ByVal labelText As String, ByVal valueText As String)
     Dim lb As Shape, vl As Shape
-    Set lb = sh.Shapes.AddTextbox(msoTextOrientationHorizontal, x, y, wLbl, 16)
+    Set lb = sh.Shapes.AddTextbox(msoTextOrientationHorizontal, X, Y, wLbl, 16)
     lb.TextFrame2.TextRange.text = labelText
     lb.TextFrame2.MarginTop = 1
     lb.Fill.ForeColor.RGB = RGB(230, 230, 230)
     lb.line.ForeColor.RGB = RGB(200, 200, 200)
 
-    Set vl = sh.Shapes.AddTextbox(msoTextOrientationHorizontal, x + wLbl + 10, y, wVal, 16)
+    Set vl = sh.Shapes.AddTextbox(msoTextOrientationHorizontal, X + wLbl + 10, Y, wVal, 16)
     vl.TextFrame2.TextRange.text = valueText
     vl.TextFrame2.MarginTop = 1
     vl.line.Visible = msoFalse

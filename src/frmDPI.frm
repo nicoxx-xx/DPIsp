@@ -1,10 +1,10 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmDPI 
    Caption         =   "Gestione dati di riga DPI"
-   ClientHeight    =   7830
+   ClientHeight    =   8010
    ClientLeft      =   120
    ClientTop       =   465
-   ClientWidth     =   14685
+   ClientWidth     =   14880
    OleObjectBlob   =   "frmDPI.frx":0000
    ShowModal       =   0   'False
    StartUpPosition =   2  'CenterScreen
@@ -14,6 +14,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 
 ' ==============================
 ' Copyright (C) 2026 Domenico Longo
@@ -42,6 +43,7 @@ Private mLo As ListObject                ' tabella destinazione: Dati!tblDati
 Private mHdrMap As Object                ' Dictionary: header normalizzato -> indice colonna (1-based)
 Private mEditIndex As Long               ' 0 = nuovo; >0 = indice riga (1-based) in DataBodyRange da modificare
 Dim ws As Worksheet
+Dim actDict As Object
 
 ' Intestazioni dei campi (come in tabella)
 Private Const HDR_UBIC As String = "Ubicazione"
@@ -60,6 +62,7 @@ Private Const HDR_RETIRE As String = "Date for retirement"
 Private Const HDR_ANN As String = "Annotazioni"
 Private Const HDR_CUST As String = "Customer"
 Private Const HDR_RESULT As String = "Result"
+Private Const HDR_RIA As String = "Required inspection activities"
 
 ' === Stato del DatePicker in-pagina ===
 Private mDP_TargetTB As MSForms.TextBox   ' il TextBox che riceverà la data
@@ -120,6 +123,9 @@ Private Sub UserForm_Initialize()
     ' 8 install mouse wheel hook
     EnableMouseScroll Me
     'Application.EnableCancelKey = xlDisabled
+    
+    ' 9 carica dizionario azioni ispettive
+    loadActionDictionary
 
     Exit Sub
 
@@ -133,47 +139,67 @@ Private Sub UserForm_Terminate()
 End Sub
 
 ' ============ eventi utente ============
+Private Sub CommandButton1_Click()
+    riaDetails.Visible = False
+End Sub
+
+Private Sub txtRIA_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    If (Button = 2) Then 'right mouse buttons
+        showRIADetailsPanel
+    End If
+End Sub
+
+Private Sub txtRIA_Change()
+    If riaDetails.Visible = True Then showRIADetailsPanel
+End Sub
+
+Private Sub LogoCNSAS_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    If (Button = 1) Or (Button = 2) Then 'left or right mouse buttons
+        CloseInlineDatePicker
+    End If
+End Sub
+
 Private Sub UserForm_Click()
     CloseInlineDatePicker
 End Sub
 
-Private Sub cboDP_Month_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub cboDP_Month_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then  ' solo click sinistro
         Me.cboDP_Month.DropDown
     End If
 End Sub
 
-Private Sub cboDP_Year_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub cboDP_Year_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then  ' solo click sinistro
         Me.cboDP_Year.DropDown
     End If
 End Sub
 
-Private Sub cboManufacturer_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub cboManufacturer_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then  ' solo click sinistro
         Me.cboManufacturer.DropDown
     End If
 End Sub
 
-Private Sub cboModel_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub cboModel_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then  ' solo click sinistro
         Me.cboModel.DropDown
     End If
 End Sub
 
-Private Sub cboResult_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub cboResult_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then  ' solo click sinistro
         Me.cboResult.DropDown
     End If
 End Sub
 
-Private Sub cboScheda_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub cboScheda_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then  ' solo click sinistro
         Me.cboScheda.DropDown
     End If
 End Sub
 
-Private Sub cboUbicazione_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub cboUbicazione_MouseDown(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then  ' solo click sinistro
         Me.cboUbicazione.DropDown
     End If
@@ -185,7 +211,130 @@ Private Sub cmdNuovo_Click()
     txtNumber.SetFocus
 End Sub
 
-Private Sub cmdModifica_Click()
+Private Sub showRIADetailsPanel()
+    riaDetails.Top = 20
+    riaDetails.Left = 20
+    
+    ' Workaround MSForms:
+    ' forza il ricalcolo della scrollbar verticale e
+    ' il refresh della viewport della TextBox multilinea per riportare sempre la scrollbar in alto.
+    ' alla prima visualizzazione la TextBox multilinea
+    ' non aggiorna correttamente la scrollbar verticale.
+    ' La variazione temporanea dell'altezza seguita da Repaint
+    ' forza il ricalcolo del layout interno.
+    ' visible DEVE essere prima e setfocus dopo
+    '.SelStart = Len(.text)
+    '.SelLength = Len(.text)
+    riaDetails.Visible = True
+    With TextBox1
+        .text = DecodificaAzioniIspettive(txtRIA.text)
+        .SelStart = 0
+        .SelLength = 0
+        .Height = .Height + 1
+        'Repaint
+        DoEvents
+        .Height = .Height - 1
+    End With
+    riaDetails.SetFocus
+End Sub
+
+Private Sub cmdPrev_Click()
+    On Error GoTo ErrMod
+    
+    Dim s As String
+    Dim rng As Range, c As Range
+    
+    LockSheet ws
+    Set rng = GetColumnRange(HDR_NUMBER)
+    If rng Is Nothing Then
+        MsgBox "Colonna 'Number' non trovata nella tabella.", vbCritical
+        Exit Sub
+    End If
+    
+    If (NzStr(txtNumber.text) <> vbNullString) And ValidateForm() Then
+        'cerca la scheda indicata, se esiste
+        s = txtNumber.text
+        Set c = rng.Find(What:=s, LookIn:=xlValues, LookAt:=xlWhole, MatchCase:=False)
+        If c Is Nothing Then
+            Set c = rng.Find(What:=CLng(s), LookIn:=xlValues, LookAt:=xlWhole, MatchCase:=False)
+        End If
+        ' se la scheda non esiste in ogni caso, aprine una nuova in base all'id inserito dall'utente
+        If c Is Nothing Then
+            ClearForm
+            modificaRecord
+        Else
+            If ((c.Row - rng.Rows(1).Row + 1) > 1) Then
+                'riga precedente
+                mEditIndex = c.Row - rng.Rows(1).Row
+            Else
+                mEditIndex = c.Row - rng.Rows(1).Row + 1
+                MsgBox "Raggiunto fine tabella dati.", vbInformation, "Modifica DPI"
+            End If
+            
+            LoadFromIndex mEditIndex
+            txtNumber.SetFocus
+        End If
+    Else
+        'se non è indicato alcun ID...
+        modificaRecord
+    End If
+    
+    Exit Sub
+    
+ErrMod:
+    LockSheet ws
+    MsgBox "Errore in Modifica: " & Err.Description, vbCritical
+End Sub
+
+Private Sub cmdNext_Click()
+    On Error GoTo ErrMod
+    
+    Dim s As String
+    Dim rng As Range, c As Range
+    
+    LockSheet ws
+    Set rng = GetColumnRange(HDR_NUMBER)
+    If rng Is Nothing Then
+        MsgBox "Colonna 'Number' non trovata nella tabella.", vbCritical
+        Exit Sub
+    End If
+    
+    If (NzStr(txtNumber.text) <> vbNullString) And ValidateForm() Then
+        'cerca la scheda indicata, se esiste
+        s = txtNumber.text
+        Set c = rng.Find(What:=s, LookIn:=xlValues, LookAt:=xlWhole, MatchCase:=False)
+        If c Is Nothing Then
+            Set c = rng.Find(What:=CLng(s), LookIn:=xlValues, LookAt:=xlWhole, MatchCase:=False)
+        End If
+        ' se la scheda non esiste in ogni caso, aprine una nuova in base all'id inserito dall'utente
+        If c Is Nothing Then
+            ClearForm
+            modificaRecord
+        Else
+            If ((c.Row - rng.Rows(1).Row + 1) < mLo.ListRows.count) Then
+                'riga successiva
+                mEditIndex = c.Row - rng.Rows(1).Row + 2
+            Else
+                mEditIndex = c.Row - rng.Rows(1).Row + 1
+                MsgBox "Raggiunto fine tabella dati.", vbInformation, "Modifica DPI"
+            End If
+            
+            LoadFromIndex mEditIndex
+            txtNumber.SetFocus
+        End If
+    Else
+        'se non è indicato alcun ID...
+        modificaRecord
+    End If
+    
+    Exit Sub
+    
+ErrMod:
+    LockSheet ws
+    MsgBox "Errore in Modifica: " & Err.Description, vbCritical
+End Sub
+
+Private Sub modificaRecord()
     On Error GoTo ErrMod
     
     Dim s As String
@@ -231,7 +380,7 @@ Private Sub cmdModifica_Click()
         Exit Sub
     End If
     
-    mEditIndex = c.row - rng.Rows(1).row + 1
+    mEditIndex = c.Row - rng.Rows(1).Row + 1
     LoadFromIndex mEditIndex
     txtNumber.SetFocus
     LockSheet ws
@@ -240,6 +389,10 @@ Private Sub cmdModifica_Click()
 ErrMod:
     LockSheet ws
     MsgBox "Errore in Modifica: " & Err.Description, vbCritical
+End Sub
+
+Private Sub cmdModifica_Click()
+    modificaRecord
 End Sub
 
 Private Sub cmdSalva_Click()
@@ -300,7 +453,7 @@ Private Sub cmdElimina_Click()
     Dim v As Variant
     Dim targetValue As Double
     Dim rngData As Range
-    Dim r As Long
+    Dim R As Long
     Dim matches As Collection
     Dim msg As String
     Dim i As Long
@@ -354,14 +507,14 @@ Private Sub cmdElimina_Click()
     Set rngData = lo.DataBodyRange
     
     ' Scorri tutte le righe della tabella
-    For r = 1 To rngData.Rows.count
+    For R = 1 To rngData.Rows.count
         Dim cellVal As Variant
-        cellVal = rngData.Cells(r, numberCol).Value2
+        cellVal = rngData.Cells(R, numberCol).Value2
         
         ' Confronto numerico robusto: prova a convertire a numero
         If IsNumeric(cellVal) Then
             If CDbl(cellVal) = targetValue Then
-                matches.Add r ' indice di riga relativo a DataBodyRange
+                matches.Add R ' indice di riga relativo a DataBodyRange
             End If
         Else
             ' Se il campo fosse testo numerico con spazi, prova a normalizzare
@@ -369,11 +522,11 @@ Private Sub cmdElimina_Click()
             s = Trim$(CStr(cellVal))
             If Len(s) > 0 And IsNumeric(s) Then
                 If CDbl(s) = targetValue Then
-                    matches.Add r
+                    matches.Add R
                 End If
             End If
         End If
-    Next r
+    Next R
     
     If matches.count = 0 Then
         MsgBox "Nessuna riga trovata con ID Scheda = " & targetValue & ".", vbInformation, "Elimina DPI"
@@ -424,7 +577,7 @@ Private Sub cmdDuplicati_Click()
     Dim numberCol As Long
     Dim hdr As Range
     Dim dataRng As Range
-    Dim r As Long
+    Dim R As Long
     Dim v As Variant
     Dim key As String
     Dim keyo As Variant
@@ -478,8 +631,8 @@ Private Sub cmdDuplicati_Click()
     Set dictValues = CreateObject("Scripting.Dictionary")
     
     ' Conta le occorrenze e memorizza tutte le rappresentazioni originali
-    For r = 1 To dataRng.Rows.count
-        v = dataRng.Cells(r, numberCol).Value2
+    For R = 1 To dataRng.Rows.count
+        v = dataRng.Cells(R, numberCol).Value2
         
         ' Ignora i blank
         If Len(Trim$(CStr(v))) > 0 Then
@@ -522,7 +675,7 @@ Private Sub cmdDuplicati_Click()
                 If Not exists Then col2.Add v
             End If
         End If
-    Next r
+    Next R
     
     ' Individua le chiavi duplicate (conteggio >= 2)
     Set dupKeys = New Collection
@@ -591,6 +744,113 @@ CleanFail:
     MsgBox "Si è verificato un errore: " & Err.Number & " - " & Err.Description, vbExclamation
 End Sub
 
+Private Sub loadActionDictionary()
+    Dim actws As Worksheet
+    Dim LastRow As Long
+    Dim R As Long
+    Dim ID As String
+    Dim Fase As String
+    Dim Attivita As String
+    
+    On Error Resume Next
+    Set actws = ThisWorkbook.Worksheets("Azioni_Ispettive")
+    On Error GoTo 0
+
+    If actws Is Nothing Then
+
+        'MsgBox "Foglio 'Azioni_Ispettive' non trovato.", vbExclamation
+
+        'DecodificaAzioniIspettive = "Dettagli azioni ispettive non trovati"
+
+        Exit Sub
+
+    End If
+
+    Set actDict = CreateObject("Scripting.Dictionary")
+    actDict.CompareMode = vbTextCompare
+
+    LastRow = actws.Cells(actws.Rows.count, 1).End(xlUp).Row
+
+    For R = 2 To LastRow
+
+        'ID = Trim$(NzStr(ws.Cells(R, 1).value))
+        ID = UCase$(Trim$(NzStr(actws.Cells(R, 1).value)))
+
+        If Len(ID) > 0 Then
+
+            Fase = NzStr(actws.Cells(R, 2).value)
+            Attivita = NzStr(actws.Cells(R, 3).value)
+
+            actDict(ID) = Array(Fase, Attivita)
+
+        End If
+
+    Next R
+End Sub
+
+Public Function DecodificaAzioniIspettive(ByVal Codici As String) As String
+    Dim ID As String
+    Dim Fase As String
+    Dim Attivita As String
+
+    Dim ArrCodici() As String
+    Dim Codice As Variant
+
+    Dim Risultato As String
+    
+    If (actDict Is Nothing) Then
+        DecodificaAzioniIspettive = "Dettagli azioni ispettive non trovati"
+        Exit Function
+    End If
+    
+    If (actDict.count = 0) Then
+        DecodificaAzioniIspettive = "Dettagli azioni ispettive non trovati"
+        Exit Function
+    End If
+        
+
+    ' Normalizzazione separatori
+    Codici = Replace(Codici, vbTab, " ")
+    Codici = Replace(Codici, ",", " ")
+    Codici = Replace(Codici, ";", " ")
+
+    Do While InStr(Codici, "  ") > 0
+        Codici = Replace(Codici, "  ", " ")
+    Loop
+
+    Codici = Trim$(Codici)
+
+    If Len(Codici) = 0 Then Exit Function
+
+    ArrCodici = Split(Codici, " ")
+
+    For Each Codice In ArrCodici
+
+        Codice = UCase$(Trim$(CStr(Codice)))
+
+        If actDict.exists(Codice) Then
+
+            Risultato = Risultato & _
+                "[" & Codice & "]" & vbCrLf & _
+                "Fase Ispezione: " & actDict(Codice)(0) & vbCrLf & _
+                "Attività: " & actDict(Codice)(1) & vbCrLf & _
+                vbCrLf
+
+        Else
+
+            Risultato = Risultato & _
+                "[" & Codice & "]" & vbCrLf & _
+                "Codice non trovato" & vbCrLf & _
+                vbCrLf
+
+        End If
+
+    Next Codice
+
+    DecodificaAzioniIspettive = Trim$(Risultato)
+
+End Function
+
 Private Sub cmdValida_Click()
 
     If ValidateForm() Then
@@ -602,27 +862,27 @@ Private Sub cmdChiudi_Click()
     Unload Me
 End Sub
 
-Private Sub txtDate_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub txtDate_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then OpenInlineDatePicker Me.txtDate, "dd/mm/yyyy"
 End Sub
 
-Private Sub txtDoM_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub txtDoM_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then OpenInlineDatePicker Me.txtDoM, "dd/mm/yyyy"
 End Sub
 
-Private Sub txtDoP_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub txtDoP_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then OpenInlineDatePicker Me.txtDoP, "dd/mm/yyyy"
 End Sub
 
-Private Sub txtDoFU_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub txtDoFU_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then OpenInlineDatePicker Me.txtDoFU, "dd/mm/yyyy"
 End Sub
 
-Private Sub txtNextInsp_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub txtNextInsp_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then OpenInlineDatePicker Me.txtNextInsp, "dd/mm/yyyy"
 End Sub
 
-Private Sub txtRetirement_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal x As Single, ByVal y As Single)
+Private Sub txtRetirement_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     If Button = 1 Then OpenInlineDatePicker Me.txtRetirement, "dd/mm/yyyy"
 End Sub
 
@@ -661,8 +921,8 @@ Private Function ValidateForm() As Boolean
     If Not HasValue(txtComments.text) Then MsgReq "Commenti", txtComments: Exit Function
     'If Not HasValue(txtAnnotazioni.text) Then MsgReq "Annotazioni", txtAnnotazioni: Exit Function
     If (Not HasValue(cboResult.value)) Or (Not ComboHasMatchedValue(cboResult)) Then MsgReq "Risultato di ispezione (ok/ko)", cboResult: Exit Function
-    Dim r As String: r = LCase$(Trim$(cboResult.value))
-    If r <> "ok" And r <> "ko" Then
+    Dim R As String: R = LCase$(Trim$(cboResult.value))
+    If R <> "ok" And R <> "ko" Then
         MsgBox "'Risultato di ispezione' deve essere 'ok' oppure 'ko'.", vbExclamation
         cboResult.SetFocus: Exit Function
     End If
@@ -847,6 +1107,7 @@ Private Sub LoadFromIndex(ByVal index1Based As Long)
     cboManufacturer.value = EnsureInComboAndReturn(cboManufacturer, NzStr(ReadField(HDR_MANUF, index1Based)))
     cboModel.value = EnsureInComboAndReturn(cboModel, NzStr(ReadField(HDR_MODEL, index1Based)))
     txtDoM.text = FormatDateForEdit(ReadField(HDR_DOM, index1Based))
+    txtRIA.text = NzStr(ReadField(HDR_RIA, index1Based))
     txtDoP.text = FormatDateForEdit(ReadField(HDR_DOP, index1Based))
     txtDoFU.text = FormatDateForEdit(ReadField(HDR_DOFU, index1Based))
     txtNextInsp.text = FormatDateOrTextForEdit(ReadField(HDR_NEXTINSP, index1Based))
@@ -879,7 +1140,14 @@ Private Function Normalize(ByVal s As String) As String
 End Function
 
 Private Function NzStr(ByVal v As Variant) As String
-    If IsError(v) Or IsEmpty(v) Or v = "" Then NzStr = vbNullString Else NzStr = CStr(v)
+    'If IsError(v) Or IsEmpty(v) Or v = "" Or (Len(Trim$(v)) = 0) Then NzStr = vbNullString Else NzStr = CStr(v)
+    If IsError(v) Or IsNull(v) Or IsEmpty(v) Then
+        NzStr = vbNullString
+    ElseIf Len(Trim$(CStr(v))) = 0 Then
+        NzStr = vbNullString
+    Else
+        NzStr = CStr(v)
+    End If
 End Function
 
 Private Function FormatDateForEdit(ByVal v As Variant) As String
@@ -920,7 +1188,7 @@ Private Function IsUniqueNumberText(ByVal numText As String, ByVal ignoreIndex A
     If Not c Is Nothing Then
         Dim firstAddr As String: firstAddr = c.Address
         Do
-            Dim idx As Long: idx = c.row - rng.Rows(1).row + 1
+            Dim idx As Long: idx = c.Row - rng.Rows(1).Row + 1
             If idx <> ignoreIndex Then IsUniqueNumberText = False: Exit Function
             Set c = rng.FindNext(c)
         Loop While Not c Is Nothing And c.Address <> firstAddr
@@ -932,7 +1200,7 @@ Private Function IsUniqueNumberText(ByVal numText As String, ByVal ignoreIndex A
         If Not c Is Nothing Then
             Dim first2 As String: first2 = c.Address
             Do
-                Dim idx2 As Long: idx2 = c.row - rng.Rows(1).row + 1
+                Dim idx2 As Long: idx2 = c.Row - rng.Rows(1).Row + 1
                 If idx2 <> ignoreIndex Then IsUniqueNumberText = False: Exit Function
                 Set c = rng.FindNext(c)
             Loop While Not c Is Nothing And c.Address <> first2
@@ -949,15 +1217,15 @@ Private Sub LoadSchedeFromAzioniDPI(cb As MSForms.ComboBox)
     cb.Clear
     Dim ws As Worksheet: Set ws = ThisWorkbook.Worksheets("Azioni_DPI")
     Dim rngH As Range: Set rngH = ws.Rows(1)
-    Dim colID As Long, colTipo As Long, lastRow As Long, r As Long
+    Dim colID As Long, colTipo As Long, LastRow As Long, R As Long
     colID = FindHeaderColumn(rngH, "ID")
     colTipo = FindHeaderColumn(rngH, "Tipo DPI")
     If colID = 0 Or colTipo = 0 Then Exit Sub
     
-    lastRow = ws.Cells(ws.Rows.count, colID).End(xlUp).row
-    For r = 2 To lastRow
-        If Len(Trim$(ws.Cells(r, colID).value)) > 0 Then
-            cb.AddItem ws.Cells(r, colID).value & " - " & ws.Cells(r, colTipo).value
+    LastRow = ws.Cells(ws.Rows.count, colID).End(xlUp).Row
+    For R = 2 To LastRow
+        If Len(Trim$(ws.Cells(R, colID).value)) > 0 Then
+            cb.AddItem ws.Cells(R, colID).value & " - " & ws.Cells(R, colTipo).value
         End If
     Next
 Fine:
@@ -973,10 +1241,10 @@ Private Sub LoadDistinctFromSheetColumn(cb As MSForms.ComboBox, ByVal sheetName 
     
     Dim dict As Object: Set dict = CreateObject("Scripting.Dictionary")
     dict.CompareMode = vbTextCompare
-    Dim lastRow As Long: lastRow = ws.Cells(ws.Rows.count, col).End(xlUp).row
-    Dim r As Long, v As Variant, key As String
-    For r = 2 To lastRow
-        v = ws.Cells(r, col).value
+    Dim LastRow As Long: LastRow = ws.Cells(ws.Rows.count, col).End(xlUp).Row
+    Dim R As Long, v As Variant, key As String
+    For R = 2 To LastRow
+        v = ws.Cells(R, col).value
         key = Trim$(LCase$(CStr(v)))
         If Len(key) > 0 Then If Not dict.exists(key) Then dict(key) = CStr(v)
     Next
@@ -1009,12 +1277,12 @@ Private Function TryParseDate(ByVal s As String, ByRef outDate As Date) As Boole
         Exit Function
     End If
     ' Prova formati comuni: ISO e dd/mm/yyyy (accetta anche - e .)
-    Dim p() As String, y As Long, m As Long, d As Long
+    Dim p() As String, Y As Long, m As Long, d As Long
     If T Like "####-##-##" Or T Like "####/##/##" Then
         T = Replace(T, "/", "-"): p = Split(T, "-")
         If UBound(p) = 2 Then
-            y = val(p(0)): m = val(p(1)): d = val(p(2))
-            outDate = DateSerial(y, m, d)
+            Y = val(p(0)): m = val(p(1)): d = val(p(2))
+            outDate = DateSerial(Y, m, d)
             If Err.Number = 0 Then TryParseDate = True
         End If
         Err.Clear
@@ -1023,16 +1291,16 @@ Private Function TryParseDate(ByVal s As String, ByRef outDate As Date) As Boole
     T = Replace(Replace(T, ".", "/"), "-", "/")
     p = Split(T, "/")
     If UBound(p) = 2 Then
-        d = val(p(0)): m = val(p(1)): y = val(p(2))
-        outDate = DateSerial(y, m, d)
+        d = val(p(0)): m = val(p(1)): Y = val(p(2))
+        outDate = DateSerial(Y, m, d)
         If Err.Number = 0 Then TryParseDate = True
         Err.Clear
     End If
     On Error GoTo 0
 End Function
 
-Private Function DaysInMonth(ByVal y As Long, ByVal m As Long) As Long
-    DaysInMonth = Day(DateSerial(y, m + 1, 0))
+Private Function DaysInMonth(ByVal Y As Long, ByVal m As Long) As Long
+    DaysInMonth = Day(DateSerial(Y, m + 1, 0))
 End Function
 
 ' ---------- API pubblica: apri il datepicker per un TextBox ----------
@@ -1086,14 +1354,14 @@ Private Sub LoadDP_Months()
 End Sub
 
 Private Sub LoadDP_Years(ByVal aroundYear As Long)
-    Dim y As Long, yMin As Long, yMax As Long
+    Dim Y As Long, yMin As Long, yMax As Long
     yMin = aroundYear - 15: If yMin < 1900 Then yMin = 1900
     yMax = aroundYear + 150: If yMax > 2200 Then yMax = 2200
 
     cboDP_Year.Clear
-    For y = yMin To yMax
-        cboDP_Year.AddItem CStr(y)
-    Next y
+    For Y = yMin To yMax
+        cboDP_Year.AddItem CStr(Y)
+    Next Y
 End Sub
 
 Private Sub RefreshDP_Days()
@@ -1181,8 +1449,8 @@ Private Sub PlacePanelNearTextBox(ByVal tb As MSForms.TextBox, ByVal panel As MS
     ClampInsideForm l, T, panel.Width, panel.Height
 
     ' Applica
-    panel.left = l
-    panel.top = T
+    panel.Left = l
+    panel.Top = T
 End Sub
 
 
@@ -1285,8 +1553,8 @@ Private Sub GetAbsPosInForm(ByVal target As Object, ByRef absL As Single, ByRef 
     absL = 0: absT = 0
     Set c = target
     Do While Not (c Is Nothing) And Not (c Is Me)
-        absL = absL + c.left
-        absT = absT + c.top
+        absL = absL + c.Left
+        absT = absT + c.Top
         If Not TryGetParent(c, parentObj) Then Exit Do
         Set c = parentObj
     Loop
